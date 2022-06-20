@@ -22,7 +22,10 @@ function NvimClient.request(client, method, params, bufnr)
 end
 
 local function getClients(bufnr)
-    local clients = vim.lsp.get_active_clients({bufnr = bufnr})
+    local ok, clients = pcall(vim.lsp.get_active_clients, {bufnr = bufnr})
+    if not ok then
+        error('getClients error')
+    end
     return vim.tbl_filter(function(client)
         if vim.tbl_get(client.server_capabilities, 'foldingRangeProvider') then
             return true
@@ -40,6 +43,9 @@ function NvimClient.requestFoldingRange(bufnr, kind)
         local clients = getClients(bufnr)
         if #clients == 0 then
             await(utils.wait(500))
+            if not utils.isBufLoaded(bufnr) then
+                return
+            end
             clients = getClients(bufnr)
         end
         -- TODO
